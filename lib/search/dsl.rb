@@ -71,6 +71,10 @@ module Search
         self.operator = Operator.symbol(operator)
         self.term = term
       end
+
+      def to_s
+        self.term
+      end
     end
 
     class PhraseClause
@@ -80,78 +84,45 @@ module Search
         self.operator = Operator.symbol(operator)
         self.phrase = phrase
       end
+
+      def to_s
+        self.phrase
+      end
     end
 
     class Query
       attr_accessor :should_clauses, :must_not_clauses, :must_clauses
+      attr_accessor :equal_clauses, :greater_clauses, :smaller_clauses
 
       def initialize(clauses)
         grouped = clauses.chunk { |c| c.operator }.to_h
-        self.should_clauses = grouped.fetch(:should, [])
-        self.must_not_clauses = grouped.fetch(:must_not, [])
-        self.must_clauses = grouped.fetch(:must, [])
-        binding.pry
+        self.should_clauses = grouped.fetch(:should, []).map{|f| "%#{f.to_s}%"}
+        self.must_not_clauses = grouped.fetch(:must_not, []).map{|f| "%#{f.to_s}%"}
+        self.must_clauses = grouped.fetch(:must, []).map{|f| "%#{f.to_s}%"}
+        self.equal_clauses = grouped.fetch(:equal, []).map{|f| f.number}
+        self.smaller_clauses = grouped.fetch(:smaller, []).map{|f| f.number}
+        self.greater_clauses = grouped.fetch(:greater, []).map{|f| f.number}
       end
 
-      #def to_elasticsearch
-      #  query = {
-      #    :query => {
-      #      :bool => {
-      #      }
-      #    }
-      #  }
+      def where(fields_text, fields_number)
+        [where_text(fields_text), where_number(fields_number)].reduce(:and)
+      end
 
-      #  if should_clauses.any?
-      #    query[:query][:bool][:should] = should_clauses.map do |clause|
-      #      clause_to_query(clause)
-      #    end
-      #  end
+      def where_text(fields)
+        query = Arel::Nodes::True.new
+        query = query.and(fields.map{|f| f.matches_any(self.should_clauses)}.reduce(:or)) unless self.should_clauses.length.zero?
+        query = query.and(self.must_clauses.map{|t| fields.map{|f| f.matches(t)}.reduce(:or)}.reduce(:and)) unless self.must_clauses.length.zero?
+        query = query.and(self.must_not_clauses.map{|t| fields.map{|f| f.does_not_match(t)}.reduce(:and)}.reduce(:and)) unless self.must_not_clauses.length.zero?
+        query
+      end
 
-      #  if must_clauses.any?
-      #    query[:query][:bool][:must] = must_clauses.map do |clause|
-      #      clause_to_query(clause)
-      #    end
-      #  end
-
-      #  if must_not_clauses.any?
-      #    query[:query][:bool][:must_not] = must_not_clauses.map do |clause|
-      #      clause_to_query(clause)
-      #    end
-      #  end
-
-      #  query
-      #end
-
-      #def clause_to_query(clause)
-      #  case clause
-      #  when TextClause
-      #    match(clause.term)
-      #  when PhraseClause
-      #    match_phrase(clause.phrase)
-      #  else
-      #    raise "Unknown clause type: #{clause}"
-      #  end
-      #end
-
-      #def match(term)
-      #  {
-      #    :match => {
-      #      :title => {
-      #        :query => term
-      #      }
-      #    }
-      #  }
-      #end
-
-      #def match_phrase(phrase)
-      #  {
-      #    :match_phrase => {
-      #      :title => {
-      #        :query => phrase
-      #      }
-      #    }
-      #  }
-      #end
+      def where_number(fields)
+        query = Arel::Nodes::True.new
+        query = query.and(fields.map{|f| f.eq_any(self.equal_clauses)}.reduce(:or)) unless self.equal_clauses.length.zero?
+        query = query.and(fields.map{|f| f.lt_any(self.smaller_clauses)}.reduce(:or)) unless self.smaller_clauses.length.zero?
+        query = query.and(fields.map{|f| f.gt_any(self.greater_clauses)}.reduce(:or)) unless self.greater_clauses.length.zero?
+        query
+      end
     end
 
     class Transformer < Parslet::Transform

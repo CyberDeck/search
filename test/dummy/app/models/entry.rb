@@ -1,3 +1,4 @@
 class Entry < ApplicationRecord
-  scope :search, ->(what) { where(Entry.arel_table[:name].matches_any(what)) }
+  include Search
+  scope :search, ->(what) { where(Searchable::parse([Entry.arel_table[:name], Entry.arel_table[:description]], [Entry.arel_table[:other], Entry.arel_table[:value]], what)) }
 end

@@ -4,6 +4,7 @@ require 'rails/all'
 
 Bundler.require(*Rails.groups)
 require "search/dsl"
+require "search/search.rb"
 
 module Dummy
   class Application < Rails::Application
