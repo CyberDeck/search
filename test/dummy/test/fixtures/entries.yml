@@ -1,0 +1,19 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: Entry One
+  description: Test
+  value: 1
+  other: 2.40
+
+two:
+  name: Entry Two
+  description: Test
+  value: 10
+  other: -5.00
+
+three:
+  name: Entry Three
+  description: Other
+  value: 10
+  other: -5.00

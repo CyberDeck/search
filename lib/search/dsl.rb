@@ -1,5 +1,6 @@
 require 'parslet'    
 module Search
+
   module Dsl
     class Parser < Parslet::Parser
       rule(:quote) { str('"') }
