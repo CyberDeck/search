@@ -3,7 +3,6 @@ require_relative 'boot'
 require 'rails/all'
 
 Bundler.require(*Rails.groups)
-require "search/dsl"
 
 module Dummy
   class Application < Rails::Application

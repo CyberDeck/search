@@ -1,12 +1,12 @@
 $:.push File.expand_path("../lib", __FILE__)
 
 # Maintain your gem's version:
-require "search/dsl/version"
+require "search/version"
 
 # Describe your gem and declare its dependencies:
 Gem::Specification.new do |s|
-  s.name        = "search-dsl"
-  s.version     = Search::Dsl::VERSION
+  s.name        = "search"
+  s.version     = Search::VERSION
   s.authors     = ["H. Gregor Molter"]
   s.email       = ["gregor.molter@secretlab.de"]
   #s.homepage    = "TODO"
